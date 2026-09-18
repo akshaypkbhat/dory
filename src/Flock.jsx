@@ -5,6 +5,8 @@ const NEIGHBOR_RADIUS = 60
 const SEPARATION_RADIUS = 22
 const MAX_SPEED = 2.2
 const MAX_FORCE = 0.05
+const MOUSE_RADIUS = 120
+const MOUSE_FORCE = 0.6
 
 class Boid {
   constructor(width, height) {
@@ -15,7 +17,7 @@ class Boid {
     this.vy = Math.sin(angle) * MAX_SPEED
   }
 
-  update(boids, width, height) {
+  update(boids, width, height, mouse) {
     let sepX = 0, sepY = 0
     let aliX = 0, aliY = 0
     let cohX = 0, cohY = 0
@@ -49,6 +51,17 @@ class Boid {
       this.vy += sepY * MAX_FORCE * 1.5 + aliY * MAX_FORCE * 0.05 + cohY * MAX_FORCE * 0.01
     }
 
+    if (mouse) {
+      const dx = this.x - mouse.x
+      const dy = this.y - mouse.y
+      const dist = Math.hypot(dx, dy)
+      if (dist > 0 && dist < MOUSE_RADIUS) {
+        const strength = (1 - dist / MOUSE_RADIUS) * MOUSE_FORCE
+        this.vx += (dx / dist) * strength
+        this.vy += (dy / dist) * strength
+      }
+    }
+
     const speed = Math.hypot(this.vx, this.vy)
     if (speed > MAX_SPEED) {
       this.vx = (this.vx / speed) * MAX_SPEED
@@ -80,13 +93,25 @@ export default function Flock() {
     resize()
     window.addEventListener('resize', resize)
 
+    const mouse = { x: -9999, y: -9999 }
+    function handleMouseMove(e) {
+      mouse.x = e.clientX
+      mouse.y = e.clientY
+    }
+    function handleMouseLeave() {
+      mouse.x = -9999
+      mouse.y = -9999
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseleave', handleMouseLeave)
+
     boids = Array.from({ length: BOID_COUNT }, () => new Boid(width, height))
 
     function draw() {
       ctx.clearRect(0, 0, width, height)
       ctx.fillStyle = 'rgba(150, 170, 200, 0.6)'
       for (const boid of boids) {
-        boid.update(boids, width, height)
+        boid.update(boids, width, height, mouse)
         const angle = Math.atan2(boid.vy, boid.vx)
         ctx.save()
         ctx.translate(boid.x, boid.y)
@@ -106,6 +131,8 @@ export default function Flock() {
     return () => {
       cancelAnimationFrame(frameId)
       window.removeEventListener('resize', resize)
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseleave', handleMouseLeave)
     }
   }, [])
 
