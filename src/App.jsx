@@ -4,6 +4,7 @@ import { auth } from './firebase'
 import Login from './Login'
 import Tasks from './Tasks'
 import Chat from './Chat'
+import Flock from './Flock'
 import './App.css'
 
 export default function App() {
@@ -13,10 +14,16 @@ export default function App() {
   useEffect(() => onAuthStateChanged(auth, setUser), [])
 
   if (user === undefined) return null
-  if (user === null) return <Login />
+  if (user === null) return (
+    <>
+      <Flock />
+      <Login />
+    </>
+  )
 
   return (
     <div className="app">
+      <Flock />
       <header>
         <h1>Dory</h1>
         <div>
